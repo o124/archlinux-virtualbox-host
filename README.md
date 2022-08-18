@@ -18,14 +18,15 @@
   - [Why Arch Linux image](#Why-Arch-Linux)
   - [The VirtualBox terms of use](#VirtualBox-terms-of-use)
 
-  
+
 <a name="about"></a>
 
 ## About
 
 This repo provides Docker compose and image files definitions
-to pull or build an image and start a docker container running Arch Linux
-with [*Oracle VM VirtualBox*](https://www.virtualbox.org/) host.
+to pull or build an image and start a docker container running
+[*Oracle VM VirtualBox*](https://www.virtualbox.org/)
+host in Arch Linux.
 
 If an existing VirtualBox guest machine,
 represented by a folder with a `*.vbox` file and its dependencies,
@@ -220,8 +221,8 @@ To use it, modify it following comments in the script file and run it in the con
 
 ```shell
 cp /usr/local/bin/vm_create vm_create
-# edit the file at the Docker host, 
-# it is now in the respective named volume location 
+# edit the file at the Docker host,
+# it is now in the respective named volume location
 bash vm_create
 ```
 
@@ -540,7 +541,7 @@ when the container is instructed to stop.
 **$VRDPIP**
 is an IP address at the Docker host to bind [`VRDP port`](#VRDP) to.
 It is where the service will listen for the incoming RDP client connections.
-When starting multiple containers, make sure they use different `$VRDPIP:$VRDP` pairs. 
+When starting multiple containers, make sure they use different `$VRDPIP:$VRDP` pairs.
 
 <a name="VRDP"></a>
 **$VRDP**
