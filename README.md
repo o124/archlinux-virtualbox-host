@@ -1,7 +1,6 @@
 # archlinux-virtualbox-host
 
 
----
 ## Content
 
 - [About](#about)
@@ -11,7 +10,7 @@
   - [Create a new guest machine](#create-a-new-guest-machine)
   - [Accessing the guest OS with an RDP viewer](#accessing-the-guest-os)
 - [Next steps](#Next-steps)
-- [Descriptions](#Descriptions)
+- [Description](#Description)
   - [Dockerfile](#Dockerfile)
     - [The *entrypoint* script](#entrypoint)
   - [Environment variables](#variables)
@@ -19,8 +18,7 @@
   - [Why Arch Linux image](#Why-Arch-Linux)
   - [The VirtualBox terms of use](#VirtualBox-terms-of-use)
 
-
----
+  
 <a name="about"></a>
 
 ## About
@@ -45,7 +43,6 @@ The running guest machine can be [accessed](#accessing-the-guest-os)
 with an RDP client.
 
 
----
 <a name="motivation"></a>
 
 ## Motivation
@@ -57,7 +54,6 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
 (and thereby control the availability of the services provided by the guest OS)
 
 
----
 <a name="how-to-start"></a>
 
 ## How to start
@@ -324,10 +320,9 @@ When the machine is created and modified as intended, exit from the bash session
    ```
 
 
----
-<a name="Descriptions"></a>
+<a name="Description"></a>
 
-## Descriptions
+## Description
 
 <a name="Dockerfile"></a>
 
@@ -411,6 +406,7 @@ then it waits for the remaining `VBoxSVC` and `VBoxXPCOMIPCD` processes to exit,
 then the container stops running.
 
 ---
+
 A safe guest OS shutdown can also be triggered by Docker host system events.
 
 When [docker daemon](https://docs.docker.com/get-started/overview/#docker-architecture)
@@ -469,7 +465,6 @@ This can be used to execute arbitrary commands in the container,
 for example see [here](#interactive-bash-session).
 
 
----
 <a name="variables"></a>
 
 ### Environment variables
@@ -537,7 +532,6 @@ that is set in `.vbox` file, see
 [here](#accessing-the-guest-os).
 
 
----
 <a name="Notes"></a>
 
 ## Notes
@@ -560,5 +554,3 @@ should favour the system stability.
 
 About the VirtualBox and VirtualBox Extension Pack licenses see
 [here](https://www.virtualbox.org/wiki/Licensing_FAQ)
-
----
