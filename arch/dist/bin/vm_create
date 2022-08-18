@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# vm_create
+
+# Create a VirtualBox guest machine with `vboxmanage` commands.
+
+# BASIC CONFIG
+
+# VM_NAME - a name of the guest machine to create. It is just a label.
+VM_NAME="arch"
+
+# available OSTYPEs can be listed with `VBoxManage list ostypes`
+VM_OSTYPE="ArchLinux_64"
+
+# Select a VM_NICTYPE, depending on the guest machine.
+# Out-of-box OS support is available for
+# "virtio" - in most Linux>2.6
+# "82540EM" - in most OSes
+# "82543GC" - in Windows XP
+VM_NICTYPE="virtio"
+
+# The maximum virtual size of the virtual disk image file
+# to create and to attach to the guest machine.
+# The file will be placed in "$VMDIR/$VM_NAME",
+# i.e. on the Docker host machine it will be in "$VMSRC/$VM_NAME".
+VDI_DISK_SIZE=131072  # in MB
+
+# Place the guest machine persistent storage file (VDI) in a mounted volume,
+# for instance, together with the guest machine configuration file
+VDI="$VMDIR/$VM_NAME/$VM_NAME.vdi"
+
+# A bootable "*.iso" file URL to start the guest machine. Leave it empty to not download the iso,
+# then the local "$VMDIR/$VM_NAME/$VM_NAME.iso" file will be used, if present.
+OS_ISO_URL="https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso"
+
+# Place the OS_ISO file in a mounted volume,
+# for instance, together with the guest machine configuration file
+OS_ISO="$VMDIR/$VM_NAME/$VM_NAME.iso"
+
+# Location of the VBoxGuestAdditions.iso file.
+# Here is the one for Arch Linux
+GA_ISO="/usr/lib/virtualbox/additions/VBoxGuestAdditions.iso"
+
+# Also, modify  as needed the other key parameters in the following `vboxmanage modifyvm`, like
+# --memory (main RAM in MB)
+# --vram (video RAM in MB)
+# --cpus
+# --vrdeport
+
+
+set -eE
+
+main()
+{
+    cd "$VMDIR"
+
+    # Check and note the available CPU count and Memory size.
+    echo -e "\nHost info:"
+    vboxmanage list hostinfo | grep -P "Processor core count:|Memory size:"
+    echo
+    # Take them into account in the following `modifyvm` command.
+
+    vboxmanage createvm \
+        --name="$VM_NAME" \
+        --basefolder="$VMDIR" \
+        --ostype="$VM_OSTYPE" \
+        --register \
+        --default
+
+    vboxmanage modifyvm "$VM_NAME" \
+        --memory 1024 \
+        --vram 16 \
+        --acpi on \
+        --hwvirtex on \
+        --nestedpaging on \
+        --pae on \
+        --cpus 4 \
+        --accelerate3d on \
+        --accelerate2dvideo on \
+        --biosbootmenu disabled \
+        --boot1 disk \
+        --boot2 dvd \
+        --boot3 none \
+        --boot4 none \
+        --nic1 nat \
+        --nictype1 "$VM_NICTYPE" \
+        --natpf1 "SSH,tcp,,22,,22" \
+        --audio none \
+        --audioin off \
+        --audioout off \
+        --clipboard-mode bidirectional \
+        --draganddrop bidirectional \
+        --vrde on \
+        --vrdeport 3389 \
+        --vrdeaddress "0.0.0.0" \
+        --vrdevideochannel on \
+        --vrdevideochannelquality 90 \
+        --vrdemulticon off
+
+    add_storage
+
+    add_hdd
+
+    add_os_iso  #  insert a bootable ISO with OS to start up or install
+
+    add_ga_iso  #  insert Guest Additions ISO
+
+    echo -e "\nShow $VM_NAME info:\n"
+
+    vboxmanage showvminfo "$VM_NAME"
+}
+
+
+add_storage()
+{
+    # Remove the default storage controllers
+
+    while read StorageCtlName
+    do
+        vboxmanage storagectl "$VM_NAME" \
+            --name "$StorageCtlName" \
+            --remove
+    done < <(
+        vboxmanage showvminfo "$VM_NAME" --machinereadable  | \
+        grep -siP 'storagecontrollername\d+=' | \
+        awk -F= '{print $2;}' | \
+        sed -r -e 's|\"||g'
+        )
+
+    # Add VirtIO storage
+
+    vboxmanage storagectl "$VM_NAME" \
+        --name "VirtIO" \
+        --add "virtio" \
+        --controller "VirtIO" \
+        --hostiocache on \
+        --bootable on
+}
+
+
+add_hdd()
+{
+    # Create a new virtual disk image (VDI) file
+
+    vboxmanage createmedium disk \
+        --filename "$VDI" \
+        --size "$VDI_DISK_SIZE"
+
+    # Connect it to the storage controller
+
+    vboxmanage storageattach "$VM_NAME" \
+        --storagectl "VirtIO" \
+        --port 0 \
+        --type hdd \
+        --discard on \
+        --nonrotational on \
+        --medium "$VDI"
+}
+
+
+add_os_iso()
+{
+    # Get a bootable "*.iso" file to start the guest machine
+
+    if ! test -r "$OS_ISO"
+    then
+        if test -n "$OS_ISO_URL"
+        then curl -o "$OS_ISO" "$OS_ISO_URL"
+        fi
+    fi
+
+    # Connect it to the storage controller
+
+    if test -r "$OS_ISO"
+    then
+        vboxmanage storageattach "$VM_NAME" \
+            --storagectl "VirtIO" \
+            --port 1 \
+            --type dvddrive \
+            --medium "$OS_ISO"
+    fi
+    # Note:
+    # The bootable dvd.iso should be on the lowest of all dvds port number
+}
+
+
+add_ga_iso()
+{
+    # Connect VBoxGuestAdditions.iso to the storage controller
+
+    if test -r "$GA_ISO"
+    then
+        vboxmanage storageattach "$VM_NAME" \
+            --storagectl "VirtIO" \
+            --port 2 \
+            --type dvddrive \
+            --medium "$GA_ISO"
+    fi
+}
+
+
+on_error()
+{
+    echo "Error" "in $BASH_COMMAND line $(caller)"
+    exit 1
+}
+
+
+trap on_error ERR
+
+main

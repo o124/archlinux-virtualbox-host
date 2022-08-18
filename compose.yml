@@ -1,0 +1,40 @@
+# The default values for the environment variables used here
+# are defined in the .env file in this dir.
+
+services:
+  vbox:
+    image: $IMAGE_NAME
+    build:
+      context: arch
+      args:
+        - VMDIR
+        - VBUSR
+        - VBUID
+        - TZONE
+    container_name: vbox-$VBGUEST
+    healthcheck:
+      disable: false
+    restart: "no"
+    #restart: unless-stopped
+    stop_grace_period: $GRACE_PERIOD
+    ports:
+      - $VRDPIP:$VRDP:$VRDP
+    networks:
+      - f-net
+    volumes:
+      - $VMSRC:$VMDIR
+      - vbusr:/home/$VBUSR
+    devices:
+      - "/dev/vboxdrv:/dev/vboxdrv"
+
+volumes:
+  vbusr:
+
+networks:
+  f-net:
+  # The following lines are optional and
+  # the explicit CIDR/IP must be unique for every container.
+    #ipam:
+      #config:
+        #- subnet: 172.30.30.0/30
+          #gateway: 172.30.30.1

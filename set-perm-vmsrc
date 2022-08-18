@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# set-perm-vmsrc
+
+# Use .env to get VMSRC and VBUID values
+# Set rwXrX permissions on $VMSRC for $VBUID
+
+while read -r pair
+do eval "$pair"
+done < <( grep -sP '^\s*VBGUEST=|^\s*VMSRC=|^\s*VBUID=' "${0%/*}/.env" )
+unset pair
+
+# test -n "$VMSRC" && test -n "$VBUID"
+
+if test -d "$VMSRC"
+then
+    chown -cR "$VBUID":"$VBUID" "$VMSRC"
+    chmod -cR u=rwX,g=rX,o= "$VMSRC"
+else
+    echo "Error: '$VMSRC' is not a directory."
+fi

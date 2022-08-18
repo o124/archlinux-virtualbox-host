@@ -1,0 +1,15 @@
+# Local rules
+
+/*
+.*
+
+!/arch/
+!/etc/
+
+!.env
+!.gitignore
+!.dockerignore
+!compose.yml
+!LICENSE
+!README.md
+!set-perm-vmsrc

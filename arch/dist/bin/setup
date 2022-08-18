@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# /usr/local/bin/setup
+
+set -eE
+
+main()
+{
+    # VMDIR, VBUSR, VBUID, and TZONE should be set in the environment.
+
+    test -n "$VMDIR" && test -n "$VBUSR" && test -n "$VBUID" && test -n "$TZONE"
+
+    ln -sf "/usr/share/zoneinfo/$TZONE" "/etc/localtime"
+
+    user_add
+
+    mkdir -p "$VMDIR"
+
+    set_perm_vmdir
+
+    install_vb_ext
+}
+
+user_add()
+{
+    # Add a no-login user with a real HOME dir.
+    # The HOME dir is used by VBox for its persistent data.
+    groupadd --gid "$VBUID" "$VBUSR"
+    useradd -m --uid "$VBUID" --gid "$VBUID" -s "/usr/bin/nologin" -c "VirtualBoxRunner" "$VBUSR"
+    passwd -l "$VBUSR"
+    chmod -cR u=rwX,go= "/home/$VBUSR"
+    return 0
+}
+
+set_perm_vmdir()
+{
+    if test -d "$VMDIR"
+    then
+        chown -cR "$VBUID":"$VBUID" "$VMDIR"
+        chmod -cR u=rwX,g=rX,o= "$VMDIR"
+    else
+        echo "Error: '$VMDIR' is not a directory."
+    fi
+}
+
+install_vb_ext()
+{
+    local VBVER EXTURL EXTFILE
+
+    # Get the version of the installed VirtualBox
+    # to download and install the Extension Pack of the same version.
+
+    # VBoxManage sends irrelevant outputs and return codes to stdout
+    # So, the output is to go through grep,
+    # but piping fails if pipefail is in force.
+    # Parse VBoxManage output step-by-step
+
+    VBVER="$(VBoxManage -v)"
+    VBVER="$(grep -siPo '\d{1}\.\d{1,2}\.\d{1,3}r\d{6,7}' <<< "$VBVER")"
+    VBVER="${VBVER%r*}"
+
+    EXTURL="https://download.virtualbox.org/virtualbox/$VBVER/Oracle_VM_VirtualBox_Extension_Pack-$VBVER.vbox-extpack"
+    EXTFILE="${EXTURL##*/}"
+
+    if ! test -r "$EXTFILE"
+    then curl -sO "$EXTURL"
+    fi
+    echo "y" | VBoxManage extpack install --replace --accept-license=sha256 "$EXTFILE" > /dev/null
+    rm "$EXTFILE"
+    return 0
+}
+
+on_error()
+{
+    echo "Error" "in $BASH_COMMAND line $(caller)"
+    exit 1
+}
+
+trap on_error ERR
+
+main
