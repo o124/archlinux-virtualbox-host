@@ -86,7 +86,13 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
   With the default values a prebuilt image can be pulled from the dockerhub
   [repo](https://hub.docker.com/r/o124/archlinux-virtualbox-host).
 
-- Pull/build the image
+- Either pull the prebuilt image
+
+   ```shell
+   sudo docker compose pull
+   ```
+  
+  or build a custom one
 
    ```shell
    sudo docker compose build
@@ -180,7 +186,7 @@ Then the container logs show
    vbox-base exited with code 0
    ```
 
-Clearly, the same happens when the `docker.service` stops,
+The same happens when the `docker.service` stops,
 for instance because the Docker host computer shuts down or reboots.
 
 
@@ -217,7 +223,13 @@ to create a new guest machine and modify it appropriately.
 Use `$VMDIR` for `--basefolder` parameter with the `createvm` command.
 
 An example script [`vm_create`]() to create Arch Linux guest is included here.
-To use it, modify it following comments in the script file and run it in the container
+To use it as it is simply run it in the container
+
+```shell
+vm_create
+```
+
+or, modify it following comments in the script file and then start the modified file
 
 ```shell
 cp /usr/local/bin/vm_create vm_create
@@ -279,13 +291,17 @@ In the `compose.yaml` file, enable `healthcheck`
    pacman -S freerdp
    ```
 
-- if the RDP client machine is the same as the Docker host machine,\
-  connect the RDP client to the running guest OS *'directly'*.
+- if the RDP client machine is the same as the Docker host machine,
+  connect the RDP client to the running guest OS *'directly'*:
+  with the default $VRDPIP and $VRDP values run
 
    ```shell
-   # substitute $VRDPIP and $VRDP with the values from .env file
-   xfreerdp +v:$VRDPIP:$VRDP +video +clipboard
+   xfreerdp +v:127.0.0.1:3389 +video +clipboard
    ```
+   
+  otherwise, change the +v: parameter argument, 
+  that takes `$VRDPIP:$VRDP` pair and
+  substitute `$VRDPIP` and `$VRDP` with the values from the `.env` file.
 
 - if the RDP client machine is not the same as the Docker host machine,
 
