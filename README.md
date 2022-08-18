@@ -229,7 +229,7 @@ To use it as it is simply run it in the container
 vm_create
 ```
 
-or, modify it following comments in the script file and then start the modified file
+otherwise, modify it following the comments in the script file, then start the modified file
 
 ```shell
 cp /usr/local/bin/vm_create vm_create
@@ -240,7 +240,7 @@ bash vm_create
 
 When the machine is created and modified as intended, exit from the bash session.
 
-In the `compose.yaml` file, enable `healthcheck`
+Finally, in the `compose.yaml` file, enable `healthcheck`
 
 ```yaml
   healthcheck:
@@ -299,8 +299,8 @@ In the `compose.yaml` file, enable `healthcheck`
    xfreerdp +v:127.0.0.1:3389 +video +clipboard
    ```
    
-  otherwise, change the +v: parameter argument, 
-  that takes `$VRDPIP:$VRDP` pair and
+  otherwise, change the `+v:` parameter argument, 
+  that takes a `$VRDPIP:$VRDP` pair and
   substitute `$VRDPIP` and `$VRDP` with the values from the `.env` file.
 
 - if the RDP client machine is not the same as the Docker host machine,
