@@ -13,7 +13,7 @@
 - [Description](#Description)
   - [Dockerfile](#Dockerfile)
     - [The *entrypoint* script](#entrypoint)
-  - [Environment variables](#variables)
+- [Environment variables](#variables)
 - [Notes](#Notes)
   - [Why Arch Linux image](#Why-Arch-Linux)
   - [The VirtualBox terms of use](#VirtualBox-terms-of-use)
@@ -467,7 +467,7 @@ for example see [here](#interactive-bash-session).
 
 <a name="variables"></a>
 
-### Environment variables
+## Environment variables
 
 The default values for the environment variables are defined in the
 [`.env`]() file.
