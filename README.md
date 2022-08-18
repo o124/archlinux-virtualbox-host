@@ -273,7 +273,7 @@ When the machine is created and modified as intended, exit from the bash session
 
 - if the RDP client machine is not the same as the Docker host machine,
 
-   - forward the `$VRDP` port from the Docker host machine:
+   - use a pre-configured SSH connection to forward the `$VRDP` port from the Docker host machine:
 
       ```shell
       ssh -NL <Client-Local-IP>:<Client-Local-VRDP>:<$VRDPIP>:<$VRDP> <Docker-host-machine>
@@ -478,8 +478,9 @@ The default values for the environment variables are defined in the
 
 <a name="VBGUEST"></a>
 **$VBGUEST** is a label used to construct the container name,
-and `$COMPOSE_PROJECT_NAME`.\
-See how in [`.env`]() and [`compose.yaml`]()
+and `$COMPOSE_PROJECT_NAME`.
+See how in [`.env`]() and [`compose.yaml`]().
+When starting multiple containers, make sure they use different `$VBGUEST` strings for them to get unique names.
 
 <a name="COMPOSE_PROJECT_NAME"></a>
 **$COMPOSE_PROJECT_NAME**
@@ -524,12 +525,14 @@ when the container is instructed to stop.
 **$VRDPIP**
 is an IP address at the Docker host to bind [`VRDP port`](#VRDP) to.
 It is where the service will listen for the incoming RDP client connections.
+When starting multiple containers, make sure they use different `$VRDPIP:$VRDP` pairs. 
 
 <a name="VRDP"></a>
 **$VRDP**
 is a port number that should be set to the same *VRDP* port number
 that is set in `.vbox` file, see
 [here](#accessing-the-guest-os).
+When starting multiple containers, make sure they use different `$VRDPIP:$VRDP` pairs.
 
 
 <a name="Notes"></a>
