@@ -191,11 +191,9 @@ for instance because the Docker host computer shuts down or reboots.
 
 ### Create a new guest machine from withing the container.
 
-<span style="font-size: 0.95em">
 Make sure, [`$VMSRC`](#VMSRC) at the Docker host is
 [accessible](#make-VMSRC-accessible)
 to [`$VBUID`](#VBUID).
-</span>
 
 <a name="interactive-bash-session"></a>
 
