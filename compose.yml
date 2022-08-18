@@ -1,5 +1,5 @@
 # The default values for the environment variables used here
-# are defined in the .env file in this dir.
+# are defined in the .env file
 
 services:
   vbox:
