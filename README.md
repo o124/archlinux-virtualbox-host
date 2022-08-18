@@ -191,17 +191,18 @@ Make sure, [`$VMSRC`](#VMSRC) at the Docker host is
 [accessible](#make-VMSRC-accessible)
 to [`$VBUID`](#VBUID).
 
-In the `compose.yaml` file, disable `healthcheck` temporarily
+<a name="interactive-bash-session"></a>
+
+*To start an interactive bash session* in the container instead of the guest OS,
+
+in the `compose.yaml` file, disable `healthcheck` temporarily
 
 ```yaml
   healthcheck:
     disable: true
 ```
 
-<a name="interactive-bash-session"></a>
-
-*To start an interactive bash session* in the container instead of the guest OS,
-run
+and run
 
 ```shell
 sudo docker compose run -it --rm --name vbox vbox bash
