@@ -8,7 +8,7 @@
 - [How to start](#how-to-start)
   - [At the Docker host](#At-the-Docker-host)
   - [Create a new guest machine](#create-a-new-guest-machine)
-  - [Accessing the guest OS with an RDP viewer](#accessing-the-guest-os)
+- [Accessing the guest OS with an RDP client](#accessing-the-guest-os)
 - [Next steps](#Next-steps)
 - [Description](#Description)
   - [Dockerfile](#Dockerfile)
@@ -37,7 +37,7 @@ and gracefully stop the guest machine.
 The *guest machine* folder with the machine configuration file `*.vbox`
 can be created elsewhere with
 [*VirtualBox GUI*](https://www.virtualbox.org/manual/ch01.html#gui-createvm)
-or with [*vboxmanage createvm*](#interactive-bash-session)
+or with [*vboxmanage createvm*](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
 in an interactive [*bash*](#interactive-bash-session) session in the container.
 
 The running guest machine can be [accessed](#accessing-the-guest-os)
@@ -80,7 +80,9 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
    cd "archlinux-virtualbox-host"
    ```
 
-- Modify values in the [`.env`]() file if needed.
+- Modify values in the
+  [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
+  file if needed.
   Note, modification of IMAGE_NAME, VMDIR, VBUSR, VBUID, and TZONE will require rebuilding of the docker image.
   Generally, the default values should be acceptable, at least for testing.
   With the default values a prebuilt image can be pulled from the dockerhub
@@ -91,7 +93,7 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
    ```shell
    sudo docker compose pull
    ```
-  
+
   or build a custom one
 
    ```shell
@@ -101,7 +103,7 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
 - If you have your [guest machine](#the-guest-machine) already prepared,
   copy it into [`$VMSRC`](#VMSRC).
   Along with the `*.vbox` file, all the `*.iso`, `*.vdi`, and other files it refers to
-  should also be in `$VMSRC`.
+  should also be in [`$VMSRC`](#VMSRC).
   If you do not have the guest machine yet,
   [create a new one](#create-a-new-guest-machine), then continue from here.
   Make sure that the `*.vbox` configuration [allows](#accessing-the-guest-os)
@@ -109,7 +111,9 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
 
 - <a name="make-VMSRC-accessible"></a>
   Provide a read/write access for [`$VBUID`](#VBUID) to [`$VMSRC`](#VMSRC).
-  The included helper script [`set-perm-vmsrc`]() can be used at the Docker host:
+  The included helper script
+  [`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc)
+  can be used at the Docker host:
 
    ```shell
    sudo ./set-perm-vmsrc
@@ -222,7 +226,9 @@ to create a new guest machine and modify it appropriately.
 
 Use `$VMDIR` for `--basefolder` parameter with the `createvm` command.
 
-An example script [`vm_create`]() to create Arch Linux guest is included here.
+An example script
+[`vm_create`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/vm_create)
+to create Arch Linux guest is included here.
 To use it as it is simply run it in the container
 
 ```shell
@@ -240,7 +246,7 @@ bash vm_create
 
 When the machine is created and modified as intended, exit from the bash session.
 
-Finally, in the `compose.yaml` file, enable `healthcheck`
+Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the container:
 
 ```yaml
   healthcheck:
@@ -250,7 +256,7 @@ Finally, in the `compose.yaml` file, enable `healthcheck`
 
 <a name="accessing-the-guest-os"></a>
 
-### Accessing the guest OS with an RDP viewer
+## Accessing the guest OS with an RDP client
 
 **At the Docker host**
 <span style="font-size: 0.95em">
@@ -276,7 +282,7 @@ Finally, in the `compose.yaml` file, enable `healthcheck`
   [`vboxmanage`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm-vrde)
   command.
 
-- The [`compose.yml`]()
+- The [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
   file should map the [`$VRDP`](#VRDP) port from Docker container to the Docker host
   <span style="font-size: 0.95em">
   (the provided configuration does it)
@@ -298,8 +304,8 @@ Finally, in the `compose.yaml` file, enable `healthcheck`
    ```shell
    xfreerdp +v:127.0.0.1:3389 +video +clipboard
    ```
-   
-  otherwise, change the `+v:` parameter argument, 
+
+  otherwise, change the `+v:` parameter argument,
   that takes a `$VRDPIP:$VRDP` pair and
   substitute `$VRDPIP` and `$VRDP` with the values from the `.env` file.
 
@@ -502,7 +508,8 @@ for example see [here](#interactive-bash-session).
 ## Environment variables
 
 The default values for the environment variables are defined in the
-[`.env`]() file.
+[`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
+file.
 
 <a name="IMAGE_NAME"></a>
 **$IMAGE_NAME** sets the image name
@@ -511,8 +518,10 @@ The default values for the environment variables are defined in the
 <a name="VBGUEST"></a>
 **$VBGUEST** is a label used to construct the container name,
 and `$COMPOSE_PROJECT_NAME`.
-See how in [`.env`]() and [`compose.yaml`]().
-When starting multiple containers, make sure they use different `$VBGUEST` strings for them to get unique names.
+See how in [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
+and [`compose.yaml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml).
+When starting multiple containers,
+make sure that they use different `$VBGUEST` strings for them to get unique names.
 
 <a name="COMPOSE_PROJECT_NAME"></a>
 **$COMPOSE_PROJECT_NAME**
@@ -523,11 +532,17 @@ is included in the folder names for the named volumes.
 **$VMSRC** is mounted into [`$VMDIR`](#VMDIR) inside the container when it starts.
 It should contain a complete VirtualBox machine to run, i.e.
 a `*.vbox` file defining the machine and everything it refers to.
-`$VMSRC` can also be a parent of the machine folder.
-`$VMSRC` should have permissions allowing `$VBUSR` with `$VBUID` inside the container
-to read and modify it.
-The included helper script [`set-perm-vmsrc`](), making use of the file `.env`,
-can be executed in the Docker host system
+It is what `--basefolder` parameter of
+[`vboxmanage createvm`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
+command expects.
+`$VMSRC` should have permissions allowing user
+[`$VBUSR`](#VBUSR) with id [`$VBUID`](#VBUID)
+inside the container to read and modify it.
+The included helper script
+[`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc),
+making use of the
+[`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env),
+file can be executed in the Docker host system
 to set the appropriate permissions on `$VMSRC` before starting the container.
 
 <a name="VMDIR"></a>
