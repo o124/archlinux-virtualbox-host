@@ -15,6 +15,8 @@ if test -d "$VMSRC"
 then
     chown -cR "$VBUID":"$VBUID" "$VMSRC"
     chmod -cR u=rwX,g=rX,o= "$VMSRC"
+    echo
+    find "$VMSRC" -print0 | sort -hz | xargs -r0 ls -lhad --color=auto
 else
     echo "Error: '$VMSRC' is not a directory."
 fi
