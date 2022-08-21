@@ -7,6 +7,7 @@ VMID=""      # as reported by `vboxmanage list vms`
 VMNAME=""    # as reported by `vboxmanage list vms`
 VHLSS_PID=0  # VBoxHeadless subshell PID
 
+
 main()
 {
     local CMD
@@ -27,9 +28,6 @@ main()
 
     # GET THE REGISTERED VM NAME AND ID, REGISTER .VBOX IF NECESSARY
 
-    # When the container had run before and preserved the VBox config in persistent storage,
-    # VM registration is not needed
-
     if ! get_vm_name_and_id
     then
         find_and_register_vm || return 1
@@ -37,7 +35,6 @@ main()
         then msg_ "Error" "No any registered VBox machine found"; false; return 1
         fi
     fi
-    msg_ "Info" "Found VM $VMNAME"
 
     # COMMAND DISPATCHER
     case "$CMD" in
@@ -46,7 +43,13 @@ main()
         "state")        vm_state ;;
         "healthcheck")  healthcheck ;;
     esac
+
+    msg_ "Info" "Waiting for the background VBox processes to terminate..."
+    pwait -u "$VBUID" -i 'VBoxSVC'
+    pwait -u "$VBUID" -i 'VBoxXPCOMIPCD'
+    msg_ "Info" "All done"
 }
+
 
 get_vm_name_and_id()
 {
@@ -56,46 +59,48 @@ get_vm_name_and_id()
     local entry vmid_re
     vmid_re='[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}'
     read -r entry < <(
-    vboxmanage list vms 2>/dev/null |\
-        grep -siP '".+"\s+{'"$vmid_re"'}' |\
-        head -n 1
+        vboxmanage list vms 2>/dev/null |\
+        grep -siPm 1 '".+"\s+{'"$vmid_re"'}'
         )
     read VMID < <(grep -siPo "$vmid_re" 2>/dev/null <<< "$entry")
 
     VMNAME="${entry//\{$VMID\}/}"
     VMNAME="${VMNAME%% }"
     test -n "$VMNAME" && test -n "$VMID" && test -n "$(vm_state)"
-    # Successful testing of vm_state above confirms that found VMID can be used for managing VM
+    # The successful testing of vm_state here confirms that found VMID can be used for managing VM
 }
+
 
 find_and_register_vm()
 {
     local vmconf
+
     read -r vmconf < <(
         find "$VMDIR" -iname "*.vbox" -print0 |\
         sort -zh |\
         head -zn 1 | tr '\0' '\n'
         )
+
     if test -z "$vmconf" || ! test -r "$vmconf"
     then msg_ "Error" "Could not find any *.vbox file"; false; return 1
     fi
-    if ! vboxmanage registervm "$vmconf"
-    then msg_ "Error" "Could not register '$vmconf'"; false; return 1
+
+    if vboxmanage registervm "$vmconf"
+    then
+        msg_ "Info" "${vmconf##*/} is registered"
+    else
+        msg_ "Error" "Could not register '$vmconf'"; false; return 1
     fi
 }
+
 
 vm_run()
 {
     # RUN THE REGISTERED VM WITH VBoxHeadless
 
     if ! vm_start
-    then
-        sleep 1
-        vm_stop  # just in case the checks in vm_start turn false negative
-        msg_ "Error" "Could not start $VMNAME"
-        false; return 1
+    then msg_ "Error" "Could not start $VMNAME"; false; return 1
     fi
-    msg_ "Info" "$VMNAME has started"
 
     # SUSPEND FURTHER EXECUTION TILL VBoxHeadless TERMINATES
 
@@ -103,22 +108,16 @@ vm_run()
     msg_ "Info" "Suspend ${0##*/}:run() while VBoxHeadless subshell PID=$VHLSS_PID is running"
     wait $VHLSS_PID
     EC=$?
-    msg_ "Info" "VBoxHeadless subshell PID=$VHLSS_PID exited, EC=$EC"
+    msg_ "Info" "The VBoxHeadless subshell EC=$EC"
     msg_ "Info" "Resuming ${0##*/}:run()"
 
     # Waiting for the VBoxHeadless itself is not redundant here
-    # and it can not go ahead of `wait $VHLSS_PID` because otherwise
-    # SIGTERM is not trapped when stopping the container
-    # and the stopping hangs
     msg_ "Info" "Waiting for VBoxHeadless to exit"
-    pwait -u "$VBUID" -i 'VBoxHeadless'
-
-    msg_ "Info" "Waiting for the background VBox processes to terminate..."
-    pwait -u "$VBUID" -i 'VBoxSVC'
-    pwait -u "$VBUID" -i 'VBoxXPCOMIPCD'
-    msg_ "Info" "All done"
-    echo
+    pwait -u "$VBUID" -i 'VBoxHeadless' &
+    WAIT_VHL_PID=$!
+    wait $WAIT_VHL_PID
 }
+
 
 vm_start()
 {
@@ -132,9 +131,8 @@ vm_start()
     else msg_ "Error" "Could not get VHLSS_PID"; false; return 1
     fi
 
-    # When VBoxHeadless fails to start, it exits quickly,
-    # and the corresponding background process disappears.
-    # Wait a little for VBoxHeadless to exit if it did fail
+    # Wait a little for VBoxHeadless to exit
+    # in the case of an immediate failure.
     sleep 1
 
     # Then check if VBoxHeadless is still running and
@@ -144,29 +142,36 @@ vm_start()
         ps --no-headers -p "$VHLSS_PID" -o pid > "/dev/null" # && \
         # vm_state | grep -qiP '(running|restoring|paused)'
     then
-        msg_ "Info" "$VMNAME state is $(vm_state)"
+        msg_ "Info" "$VMNAME has started"
         return 0
     else
-        msg_ "Error" "VBoxHeadless --startvm $VMNAME"
+        msg_ "Error" "VBoxHeadless --startvm $VMNAME has aborted"
         false; return 1
     fi
 }
 
+
 vm_stop()
 {
-    if vm_state | grep -qiP '(poweroff|aborted|saved)'
+    STOP_CMD="${1:-acpipowerbutton}"
+
+    VM_STATE="$(vm_state)"
+
+    msg_ "Info" "$VMNAME state is $VM_STATE"
+
+    if grep -qiP '(poweroff|aborted|saved)' <<< "$VM_STATE"
     then
-        msg_ "Info" "$VMNAME has already been powered off"
+        msg_ "Info" "Not sending '$STOP_CMD' signal"
     else
-        msg_ "Info" "$VMNAME state is $(vm_state)"
-        msg_ "Info" "Sending ACPI power button signal to $VMNAME"
-        if vboxmanage controlvm "$VMID" acpipowerbutton
-        then msg_ "Info" "$VMNAME received 'acpipowerbutton' signal"
-        else msg_ "Error" "vboxmanage controlvm $VMNAME acpipowerbutton"; false; return 1
+        msg_ "Info" "Sending '$STOP_CMD' signal to $VMNAME"
+        if vboxmanage controlvm "$VMID" "$STOP_CMD"
+        then msg_ "Info" "$VMNAME received '$STOP_CMD' signal"
+        else msg_ "Error" "vboxmanage controlvm $VMNAME '$STOP_CMD'"; false; return 1
         fi
     fi
     return 0
 }
+
 
 vm_state()
 {
@@ -177,6 +182,7 @@ vm_state()
     cut -d "=" -f 2
     return 0
 }
+
 
 healthcheck()
 {
@@ -191,11 +197,13 @@ healthcheck()
     fi
 }
 
+
 vm_list()
 {
     echo "Name=$VMNAME"
     echo "ID=$VMID"
 }
+
 
 msg_() {
 #   param 1: msg Type, like Error, Info, Warning...
@@ -203,31 +211,30 @@ msg_() {
     printf "%-8s %s\n" "$1" "$2"
 }
 
-# CATCH SIGNALS
 
-# A trap handler can not have any params, make one for every signal
+# HANDLE SIGNALS
+
 trap_INT(){ sig_trapper 'INT'; }
 trap_QUIT(){ sig_trapper 'QUIT'; }
 trap_TERM(){ sig_trapper 'TERM'; }
 sig_trapper()
 {
     msg_ "Info" "Signal $1 trapped"
-    # pending:
-    # define save-vm-state(), power-off-vm(), ...
-    # call them here depending on the caught signal
     case "$1" in
-        "INT") vm_stop;;  # save-vm-state
-        "QUIT") vm_stop;; # power-off-vm
-        "TERM") vm_stop;;
+        "INT") vm_stop "savestate" ;;
+        "QUIT") vm_stop "poweroff" ;;
+        "TERM") vm_stop "acpipowerbutton" ;;
     esac
     msg_ "Info" "Trap $1 finished"
 }
 
+
 on_error()
 {
-    msg_ "Error" "in $BASH_COMMAND line $(caller)"
+    msg_ "Error" "in '$BASH_COMMAND' line $(caller)"
     return 1
 }
+
 
 trap on_error ERR
 trap trap_INT INT
