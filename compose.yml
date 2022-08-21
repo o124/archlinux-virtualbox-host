@@ -17,6 +17,7 @@ services:
     restart: "no"
     #restart: unless-stopped
     stop_grace_period: $GRACE_PERIOD
+    #stop_signal: SIGINT
     ports:
       - $VRDPIP:$VRDP:$VRDP
     networks:
@@ -26,6 +27,7 @@ services:
       - vbusr:/home/$VBUSR
     devices:
       - "/dev/vboxdrv:/dev/vboxdrv"
+      - "/dev/vboxdrvu:/dev/vboxdrvu"
 
 volumes:
   vbusr:
