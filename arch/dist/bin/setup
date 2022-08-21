@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 # /usr/local/bin/setup
 
+# Set `/etc/localtime`
+# Install Oracle_VM_VirtualBox_Extension_Pack
+# Prepare $HOME for $VBUSR
+# Move /usr/local/bin/vm*create* into /home/$VBUSR/
+# Prepare $VMDIR
+
 set -eE
+
 
 main()
 {
@@ -11,36 +18,17 @@ main()
 
     ln -sf "/usr/share/zoneinfo/$TZONE" "/etc/localtime"
 
+    install_vb_ext
+
     user_add
+
+    mv_vm_create
 
     mkdir -p "$VMDIR"
 
     set_perm_vmdir
-
-    install_vb_ext
 }
 
-user_add()
-{
-    # Add a no-login user with a real HOME dir.
-    # The HOME dir is used by VBox for its persistent data.
-    groupadd --gid "$VBUID" "$VBUSR"
-    useradd -m --uid "$VBUID" --gid "$VBUID" -s "/usr/bin/nologin" -c "VirtualBoxRunner" "$VBUSR"
-    passwd -l "$VBUSR"
-    chmod -cR u=rwX,go= "/home/$VBUSR"
-    return 0
-}
-
-set_perm_vmdir()
-{
-    if test -d "$VMDIR"
-    then
-        chown -cR "$VBUID":"$VBUID" "$VMDIR"
-        chmod -cR u=rwX,g=rX,o= "$VMDIR"
-    else
-        echo "Error: '$VMDIR' is not a directory."
-    fi
-}
 
 install_vb_ext()
 {
@@ -64,16 +52,57 @@ install_vb_ext()
     if ! test -r "$EXTFILE"
     then curl -sO "$EXTURL"
     fi
-    echo "y" | VBoxManage extpack install --replace --accept-license=sha256 "$EXTFILE" > /dev/null
+    echo "y" | VBoxManage extpack install --replace --accept-license=sha256 "$EXTFILE"
     rm "$EXTFILE"
     return 0
 }
+
+
+user_add()
+{
+    # Add a no-login user with a real HOME dir.
+    # The HOME dir is used by VBox for its persistent data.
+    groupadd --gid "$VBUID" "$VBUSR"
+    useradd -m --uid "$VBUID" --gid "$VBUID" -s "/usr/bin/nologin" -c "VirtualBoxRunner" "$VBUSR"
+    passwd -l "$VBUSR"
+    chmod -cR u=rwX,go= "/home/$VBUSR"
+}
+
+
+mv_vm_create()
+{
+    local FILE
+
+    while read -r FILE
+    do
+        if ! mv -ut "/home/$VBUSR" "$FILE"
+        then echo "Error: while moving '$FILE'. EC=$?"
+        fi
+    done < <( find "/usr/local/bin" -type f -iname "vm*create*" | sort )
+
+    chmod -cR u=rwX,go= "/home/$VBUSR"
+    chown -cR "$VBUSR":"$VBUSR" "/home/$VBUSR"
+}
+
+
+set_perm_vmdir()
+{
+    if test -d "$VMDIR"
+    then
+        chown -cR "$VBUID":"$VBUID" "$VMDIR"
+        chmod -cR u=rwX,g=rX,o= "$VMDIR"
+    else
+        echo "Error: '$VMDIR' is not a directory."
+    fi
+}
+
 
 on_error()
 {
     echo "Error" "in $BASH_COMMAND line $(caller)"
     exit 1
 }
+
 
 trap on_error ERR
 
