@@ -41,13 +41,8 @@ main()
         "run")          vm_run ;;
         "list")         vm_list ;;
         "state")        vm_state ;;
-        "healthcheck")  healthcheck ;;
+        "healthcheck")  healthcheck ;;  # healthcheck does not return here
     esac
-
-    msg_ "Info" "Waiting for the background VBox processes to terminate..."
-    pwait -u "$VBUID" -i 'VBoxSVC'
-    pwait -u "$VBUID" -i 'VBoxXPCOMIPCD'
-    msg_ "Info" "All done"
 }
 
 
@@ -108,7 +103,7 @@ vm_run()
     msg_ "Info" "Suspend ${0##*/}:run() while VBoxHeadless subshell PID=$VHLSS_PID is running"
     wait $VHLSS_PID
     EC=$?
-    msg_ "Info" "The VBoxHeadless subshell EC=$EC"
+    msg_ "Info" "VBoxHeadless subshell exited with EC=$EC"
     msg_ "Info" "Resuming ${0##*/}:run()"
 
     # Waiting for the VBoxHeadless itself is not redundant here
@@ -116,6 +111,10 @@ vm_run()
     pwait -u "$VBUID" -i 'VBoxHeadless' &
     WAIT_VHL_PID=$!
     wait $WAIT_VHL_PID
+
+    msg_ "Info" "Waiting for the background VBox processes to terminate..."
+    pwait -u "$VBUID" -i 'VBoxSVC' 'VBoxXPCOMIPCD'
+    msg_ "Info" "All done"
 }
 
 
@@ -193,7 +192,8 @@ healthcheck()
         exec "/usr/local/bin/healthcheck"
     else
         # https://www.virtualbox.org/sdkref/_virtual_box_8idl.html#a80b08f71210afe16038e904a656ed9eb
-        vm_state | grep -qiP '(running|restoring|saving|paused|saved)';
+        vm_state | grep -qiP '(running|restoring|saving|paused|saved)'
+        exit $?
     fi
 }
 
