@@ -6,7 +6,7 @@
 # BASIC PARAMETERS
 
 # VM_NAME - a name of the guest machine to create.
-# It is just a label (and the guet machine folder name).
+# It is just a label (and the guest machine folder name).
 VM_NAME="${VM_NAME:-arch}"
 
 # The available OSTYPEs can be listed with `VBoxManage list ostypes`
