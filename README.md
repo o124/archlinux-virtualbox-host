@@ -23,36 +23,42 @@
 
 ## About
 
-This repo provides Docker compose and image files definitions
+This repo provides docker compose and image file definitions
 to pull or build an image and start a docker container running
 [*Oracle VM VirtualBox*](https://www.virtualbox.org/)
 host in Arch Linux.
 
-If an existing VirtualBox guest machine,
+If an existing VirtualBox *guest* machine,
 represented by a folder with a `*.vbox` file and its dependencies,
 is mounted into the container, the container can automatically start
 and gracefully stop the guest machine.
 
 <a name="the-guest-machine"></a>
-The *guest machine* folder with the machine configuration file `*.vbox`
-can be created elsewhere with
-[*VirtualBox GUI*](https://www.virtualbox.org/manual/ch01.html#gui-createvm)
-or with [*vboxmanage createvm*](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
-in an interactive [*bash*](#interactive-bash-session) session in the container.
+The guest machine folder with the machine configuration file `*.vbox`
+can be created with [vboxmanage createvm](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
+in the container ([see below](#create-a-new-guest-machine)) or elsewhere with
+[VirtualBox GUI](https://www.virtualbox.org/manual/ch01.html#gui-createvm).
 
 The running guest machine can be [accessed](#accessing-the-guest-os)
 with an RDP client.
+
+The corresponding dockerhub
+[repo](https://hub.docker.com/r/o124/archlinux-virtualbox-host)
+is built from the sources herein.
 
 
 <a name="motivation"></a>
 
 ## Motivation
 
-- Avoid the installation of a complete `virtualbox` package in a *headless* Arch Linux host.\
-Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrelevant in a headless host.
+- Avoid the installation of a complete `virtualbox` package
+  in a *headless* Arch Linux host.
 
-- Automate the startup/shutdown of a VirtualBox guest OS by Docker daemon
-(and thereby control the availability of the services provided by the guest OS)
+- Automate the startup/shutdown of VirtualBox guest machines by the Docker daemon.
+
+- Provide an alternative response to the `TERM` signal for `VBoxHeadless`.
+  By default, VBoxHeadless tries to `savestate` of the guest machine,
+  which is not always the needed action.
 
 
 <a name="how-to-start"></a>
@@ -62,16 +68,20 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
 
 <a name="At-the-Docker-host"></a>
 
-**At the [Docker host](https://docs.docker.com/get-started/overview/#docker-architecture)**
-(*running under Arch Linux*, it can be remote and headless)
+A *[Docker host](https://docs.docker.com/get-started/overview/#docker-architecture)*
+running under Arch Linux is implied here, it can be remote and headless.
+
+**At the Docker host**:
 
 - Install the VirtualBox drivers
 
    ```shell
-   pacman -S virtualbox-host-modules-arch
+   sudo pacman -S VIRTUALBOX-HOST-MODULES
    ```
 
-- Override the `docker.service` configuration as [suggested](#docker-service-overriding).
+- Override the `docker.service` configuration as
+  [suggested](#docker-service-overriding).
+
 
 - Clone this repo
 
@@ -83,10 +93,12 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
 - Modify values in the
   [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
   file if needed.
-  Note, modification of IMAGE_NAME, VMDIR, VBUSR, VBUID, and TZONE will require rebuilding of the docker image.
+  Note, modification of IMAGE_NAME, VMDIR, VBUSR, VBUID, and TZONE
+  will require rebuilding of the docker image.
   Generally, the default values should be acceptable, at least for testing.
-  With the default values a prebuilt image can be pulled from the dockerhub
+  An image built with the default values can be pulled from the dockerhub
   [repo](https://hub.docker.com/r/o124/archlinux-virtualbox-host).
+
 
 - Either pull the prebuilt image
 
@@ -100,50 +112,55 @@ Along with the *cli* VirtualBox interface, the package includes *Qt GUI*, irrele
    sudo docker compose build
    ```
 
-- If you have your [guest machine](#the-guest-machine) already prepared,
+- If a guest machine is already prepared,
   copy it into [`$VMSRC`](#VMSRC).
-  Along with the `*.vbox` file, all the `*.iso`, `*.vdi`, and other files it refers to
-  should also be in [`$VMSRC`](#VMSRC).
-  If you do not have the guest machine yet,
-  [create a new one](#create-a-new-guest-machine), then continue from here.
+  Along with the machine configuration `*.vbox` file,
+  all the `*.iso`, `*.vdi`, and other files it refers to
+  should also be copied into [`$VMSRC`](#VMSRC).
   Make sure that the `*.vbox` configuration [allows](#accessing-the-guest-os)
   incoming RDP connections.
+  If you do not have the guest machine yet,
+  [create a new one](#create-a-new-guest-machine), then continue from here.
+
 
 - <a name="make-VMSRC-accessible"></a>
-  Provide a read/write access for [`$VBUID`](#VBUID) to [`$VMSRC`](#VMSRC).
-  The included helper script
-  [`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc)
-  can be used at the Docker host:
+  Provide a read/write access to [`$VMSRC`](#VMSRC) for [`$VBUID`](#VBUID).
+  For that, the included helper script
+  [`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc),
+  making use of the
+  [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
+  file, can be used at the Docker host:
 
    ```shell
    sudo ./set-perm-vmsrc
    ```
 
-- Start the service
+- Start the service defined in the
+  [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
+  file and follow log messages
 
    ```shell
    sudo docker compose up -d
    sudo docker compose logs -f
    ```
 
-  The container logs should show something like this
+  The container log should show something like this
+  (here and below, "arch" is the demo guest machine name)
 
    ```
-   vbox-base  | Info     Found VM "arch"
    vbox-base  | Info     Launching "arch"
-   vbox-base  | Info     VBoxHeadless subshell PID=62
+   vbox-base  | Info     VBoxHeadless subshell PID=61
    vbox-base  | Starting virtual machine: 10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
-   vbox-base  | Info     "arch" state is "running"
    vbox-base  | Info     "arch" has started
-   vbox-base  | Info     Suspend entrypoint:run() while VBoxHeadless subshell PID=62 is running
+   vbox-base  | Info     Suspend entrypoint:run() while VBoxHeadless subshell PID=61 is running
    ```
 
-Now the guest machine should be [accessible](#accessing-the-guest-os)
-for RDP clients.
+Now the guest machine should be accessible for RDP clients,
+[here](#accessing-the-guest-os) is how.
 
-Then, when the guest OS shuts down properly,
-for example, when a user shuts it down interactively,
-the following appears in the container logs
+When the guest OS shuts down properly,
+for example, when a user shuts it down using the guest OS interface,
+the following appears in the container log
 
    ```
    vbox-base  | Oracle VM VirtualBox Headless Interface 6.1.36
@@ -152,30 +169,29 @@ the following appears in the container logs
    vbox-base  |
    vbox-base  | VRDE server is listening on port 3389.
    vbox-base  | VRDE server is inactive.
-   vbox-base  | Info     VBoxHeadless subshell PID=62 exited, EC=0
+   vbox-base  | Info     VBoxHeadless subshell exited with EC=0
    vbox-base  | Info     Resuming entrypoint:run()
    vbox-base  | Info     Waiting for VBoxHeadless to exit
    vbox-base  | Info     Waiting for the background VBox processes to terminate...
    vbox-base  | Info     All done
-   vbox-base  |
    vbox-base exited with code 0
    ```
 
-A normal guest OS shutdown can also be triggered by Docker host commands:
+Alternatively, a normal guest OS shutdown can also be triggered by Docker host commands:
 
    ```shell
    sudo docker compose stop
    ```
 
-Then the container logs show
+Then the container log shows
 
    ```
    vbox-base  | Info     Signal TERM trapped
    vbox-base  | Info     "arch" state is "running"
-   vbox-base  | Info     Sending ACPI power button signal to "arch"
+   vbox-base  | Info     Sending 'acpipowerbutton' signal to "arch"
    vbox-base  | Info     "arch" received 'acpipowerbutton' signal
    vbox-base  | Info     Trap TERM finished
-   vbox-base  | Info     VBoxHeadless subshell PID=62 exited, EC=143
+   vbox-base  | Info     VBoxHeadless subshell exited with EC=143
    vbox-base  | Info     Resuming entrypoint:run()
    vbox-base  | Info     Waiting for VBoxHeadless to exit
    vbox-base  | Oracle VM VirtualBox Headless Interface 6.1.36
@@ -186,7 +202,6 @@ Then the container logs show
    vbox-base  | VRDE server is inactive.
    vbox-base  | Info     Waiting for the background VBox processes to terminate...
    vbox-base  | Info     All done
-   vbox-base  |
    vbox-base exited with code 0
    ```
 
@@ -196,17 +211,18 @@ for instance because the Docker host computer shuts down or reboots.
 
 <a name="create-a-new-guest-machine"></a>
 
-### Create a new guest machine from withing the container.
+### Create a new guest machine using the container
 
-Make sure, [`$VMSRC`](#VMSRC) at the Docker host is
-[accessible](#make-VMSRC-accessible)
-to [`$VBUID`](#VBUID).
+[Make sure](#make-VMSRC-accessible) that [`$VMSRC`](#VMSRC) at the Docker host
+is accessible to [`$VBUID`](#VBUID).
 
 <a name="interactive-bash-session"></a>
 
-*To start an interactive bash session* in the container instead of the guest OS,
-
-in the `compose.yaml` file, disable `healthcheck` temporarily
+To start an *interactive bash session* in the container instead of the guest machine,
+temporarily disable
+[`healthcheck`](https://docs.docker.com/compose/compose-file/#healthcheck)
+in the [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
+file
 
 ```yaml
   healthcheck:
@@ -216,37 +232,59 @@ in the `compose.yaml` file, disable `healthcheck` temporarily
 and run
 
 ```shell
-sudo docker compose run -it --rm --name vbox vbox bash
+sudo docker compose run -it --rm --name base vbox bash
 ```
 
-A container should start up and get ready for input.
+A container should start up and show bash prompt ready for input.
 
-*In the container*, use [`vboxmanage`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
-to create a new guest machine and modify it appropriately.
+- Use
+  [`vboxmanage createvm`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
+  and
+  [`vboxmanage modifyvm`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm)
+  there to create a new guest machine and modify it appropriately.
+  Use `$VMDIR` for `--basefolder` parameter with the `createvm` command.
 
-Use `$VMDIR` for `--basefolder` parameter with the `createvm` command.
 
-An example script
-[`vm_create`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/vm_create)
-to create Arch Linux guest is included here.
-To use it as it is simply run it in the container
+- Alternatively, an example script
+  [`vm_create`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/vm_create)
+  to create Arch Linux guest is included here.\
+  To use it as it is simply run it in the container
 
-```shell
-vm_create
-```
+  ```shell
+  ./vm_create
+  ```
 
-otherwise, modify it following the comments in the script file, then start the modified file
+  The script supports a number of variables (described inside the script) to control
+  the guest machine configuration. For example, to create an ubuntu guest run:
 
-```shell
-cp /usr/local/bin/vm_create vm_create
-# edit the file at the Docker host,
-# it is now in the respective named volume location
-bash vm_create
-```
+  ```shell
+  VM_NAME="s-proxy" \
+  VM_OSTYPE="Ubuntu_64" \
+  OS_ISO_URL="https://releases.ubuntu.com/22.04.1/ubuntu-22.04.1-live-server-amd64.iso" \
+  ./vm_create
+  ```
+
+  The script can also be modified directly at the Docker host machine
+  and then started in the container as above.
+  To locate the named volume folder with the file at the Docker host machine do:
+
+  ```shell
+  sudo docker volume ls --format "{{.Mountpoint}}" | grep -sP 'vbox.+_vbusr'
+  ```
+
+  Here is the default result:
+
+  ```
+  /var/lib/docker/volumes/vbox-base_vbusr/_data
+  ```
+
+  There the `./vm_create` file can be modified with any text editor available at the Docker host.
 
 When the machine is created and modified as intended, exit from the bash session.
 
-Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the container:
+Finally, in the [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
+file, re-enable the
+[`healthcheck`](https://docs.docker.com/compose/compose-file/#healthcheck)
 
 ```yaml
   healthcheck:
@@ -262,6 +300,7 @@ Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the containe
 <span style="font-size: 0.95em">
 (before starting the guest machine)
 </span>.
+
 
 - To activate the VirtualBox *VRDP* server and allow incoming *RDP* connections
   the guest machine configuration file `*.vbox`
@@ -280,7 +319,8 @@ Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the containe
   [*VirtualBox GUI*](https://www.virtualbox.org/manual/ch03.html#settings-remote-display)
   or with
   [`vboxmanage`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm-vrde)
-  command.
+  command (also from within the container, see [here](#create-a-new-guest-machine)).
+
 
 - The [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
   file should map the [`$VRDP`](#VRDP) port from Docker container to the Docker host
@@ -291,40 +331,53 @@ Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the containe
 
 **At the RDP client machine** (*"headed"*)
 
-- install an RDP client, for instance [*freerdp*](https://www.freerdp.com/).
+- Install an RDP client, for instance [*freerdp*](https://www.freerdp.com/).
 
    ```shell
-   pacman -S freerdp
+   sudo pacman -S freerdp
    ```
 
-- if the RDP client machine is the same as the Docker host machine,
+- If the RDP client machine is the same as the Docker host machine,
   connect the RDP client to the running guest OS *'directly'*:
-  with the default $VRDPIP and $VRDP values run
 
    ```shell
    xfreerdp +v:127.0.0.1:3389 +video +clipboard
    ```
 
-  otherwise, change the `+v:` parameter argument,
-  that takes a `$VRDPIP:$VRDP` pair and
-  substitute `$VRDPIP` and `$VRDP` with the values from the `.env` file.
+  Here, the `+v:` parameter takes a `$VRDPIP:$VRDP` pair,
+  the default values `127.0.0.1` and `3389` from the `.env` file
+  are used in this command example.
 
-- if the RDP client machine is not the same as the Docker host machine,
 
-   - use a pre-configured SSH connection to forward the `$VRDP` port from the Docker host machine:
+- If the RDP client machine is not the same as the Docker host machine,
+
+   - use a pre-configured SSH connection to forward the `$VRDP` port
+     from the Docker host machine
+     <span style="font-size: 0.95em">
+     (the remote SSH server there should allow port forwarding)
+     </span>
 
       ```shell
-      ssh -NL <Client-Local-IP>:<Client-Local-VRDP>:<$VRDPIP>:<$VRDP> <Docker-host-machine>
-      # for example:
-      # ssh -NL 127.0.0.1:3389:127.0.0.1:3389 192.168.0.1
+      # ssh -NL <Client-Local-IP>:<Client-Local-VRDP>:<$VRDPIP>:<$VRDP> <Docker-host-machine>
       ```
 
-   - connect the RDP client to the running guest OS:
+      for example:
 
       ```shell
-      # substitute <Client-Local-IP> and <Client-Local-VRDP>
-      # for the values from the ssh command above
-      xfreerdp +v:<Client-Local-IP>:<Client-Local-VRDP> +video +clipboard
+      ssh -NL 127.1.2.3:3389:127.0.0.1:3389 192.168.0.1
+      ```
+
+   - connect the RDP client to the running guest OS
+
+      ```shell
+      # xfreerdp +v:<Client-Local-IP>:<Client-Local-VRDP> +video +clipboard
+      ```
+
+      substitute `<Client-Local-IP>` and `<Client-Local-VRDP>`
+      for the values from the ssh command above, for example:
+
+      ```shell
+      xfreerdp +v:127.1.2.3:3389 +video +clipboard
       ```
 
 
@@ -333,7 +386,8 @@ Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the containe
 ## Next steps
 
 - After initial tests confirm expected container behaiviuor,
-  the `restart:` configuration entry in `compose.yaml`
+  the `restart:` configuration entry in
+  [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
   can be changed to `unless-stopped`:
 
   ```yaml
@@ -350,7 +404,8 @@ Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the containe
    </NAT>
    ```
   to make them available at the Docker host system
-  add corresponting `ports:` entries in `compose.yml`
+  add the corresponding `ports:` entries in [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml),
+  for example:
 
    ```yaml
    ports:
@@ -361,6 +416,7 @@ Finally, in the `compose.yaml` file, re-enable the `healthcheck` of the containe
 <a name="Description"></a>
 
 ## Description
+
 
 <a name="Dockerfile"></a>
 
@@ -374,55 +430,67 @@ The image is based on [`archlinux/archlinux`](https://hub.docker.com/r/archlinux
 It adds the packages
 
 - `virtualbox`
+
 - `virtualbox-host-modules-arch`
+
 - `virtualbox-guest-iso`
+
 
 and the local scripts
 
 - `/usr/local/bin/setup`
+
 - `/usr/local/bin/entrypoint`
+
 
 The [environment](#variables) variables and arguments described below
 define the generated image.
 
+
 The `setup` script is used in the Dockerfile to
 
-- download and install the *Oracle VM VirtualBox Extension Pack*
+- download and install the
+  [*Oracle VM VirtualBox Extension Pack*](https://www.virtualbox.org/manual/ch01.html#intro-installing)
+
 - create user [`$VBUSR`](#VBUSR) with [`$VBUID`](#VBUID)
+
 - create [`$VMDIR`](#VMDIR) and set its permissions
+
 - set the timezone to [`$TZONE`](#TZONE)
+
 
 The `entrypoint` script is described [below](#entrypoint).
 
 
-The Dockerfile exposes volumes
+The Dockerfile exposes mount points
 
-- [`$VMDIR`](#VMDIR), a mount point for the guest machine folder
-- [`/home/$VBUSR`](#VBUSR) that holds the guest machine registration and other VirtualBox data
+  - [`$VMDIR`](#VMDIR) - for the guest machine folder
 
-and ports
-
-- [`$VRDP`](#VRDP), an *RDP* port used to access the running guest machine.
+  - [`/home/$VBUSR`](#VBUSR) that holds the guest machine registration and other VirtualBox data
 
 
-To run VirtualBox commands with lesser privileges,
-the Dockerfile executes the `HEALTHCHECK` and `ENTRYPOINT` instructions
-as user [`$VBUSR`](#VBUSR).
+To run VirtualBox with lesser privileges,
+the Dockerfile executes the
+[`HEALTHCHECK`](https://docs.docker.com/engine/reference/builder/#healthcheck)
+and
+[`ENTRYPOINT`](https://docs.docker.com/engine/reference/builder/#entrypoint)
+instructions as user [`$VBUSR`](#VBUSR).
 
 The default `HEALTHCHECK` here only checks
 [*MachineState*](https://www.virtualbox.org/sdkref/_virtual_box_8idl.html#a80b08f71210afe16038e904a656ed9eb)
-reported by `vboxmanage showvminfo`.\
-If the `arch/dist/bin/healthcheck` file (not provided here) existed during the image generation,\
-it is executed instead and its exit code is reported to the `HEALTHCHECK` instruction.\
+reported by `vboxmanage showvminfo`.
+If the `arch/dist/bin/healthcheck` file (not provided here) existed during the image generation,
+it is executed instead and its exit code is reported to the `HEALTHCHECK` instruction.
 This custom `healthcheck` can do more guest-relevant tests.
-For example, it can check availability of the services provided by the guest.
+For example, it can check the availability of the services provided by the guest.
 
 
 <a name="entrypoint"></a>
 
 #### The *entrypoint* script.
 
-The `entrypoint` script controls the guest machine registration and life cycle.
+The [`entrypoint`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/entrypoint)
+script controls the guest machine registration and life cycle.
 It is the main part of the repo.
 
 On every start, the `entrypoint` script gets the list of the registered guests
@@ -430,6 +498,7 @@ from `vboxmanage list vms`, and uses the first one
 (the only one is expected to be there) to start it with `vboxheadless --startvm`.
 
 <a name="if-no-registered-machine-found"></a>
+
 If no registered machine found (for instance, on the first start),
 the script recursively scans [`$VMDIR`](#VMDIR) to find all `*.vbox` files,
 sorts them alphabetically, then
@@ -439,7 +508,7 @@ and try again with `vboxmanage list vms` and `vboxheadless --startvm`.
 
 After the guest is successfully started,
 the script waits for the `VBoxHeadless` process to exit
-(this happens for instance when the guest OS stops),
+(i.e. for instance when the guest OS stops),
 then it waits for the remaining `VBoxSVC` and `VBoxXPCOMIPCD` processes to exit,
 then the container stops running.
 
@@ -447,23 +516,43 @@ then the container stops running.
 
 A safe guest OS shutdown can also be triggered by Docker host system events.
 
-When [docker daemon](https://docs.docker.com/get-started/overview/#docker-architecture)
+When the [Docker daemon](https://docs.docker.com/get-started/overview/#docker-architecture)
 tries to stop the container, it sends the `TERM` signal to the container,
 waits for [`$GRACE_PERIOD`](#GRACE_PERIOD) until it stops gracefully,
 and if the container does not stop afterwards, kills it.
 
 To allow a graceful shutdown of the guest OS withing the `$GRACE_PERIOD`,
-the `entrypoint` script traps the `INT`, `QUIT`, and `TERM` signals
-and in response sends `acpipowerbutton` signal to the guest OS.
-*If the guest OS handles the ACPI signal*,
+the `entrypoint` script traps the `TERM` signal
+and in response sends `acpipowerbutton` signal
+(the default stop action) to the guest OS.
+If the guest OS can handle the ACPI signal,
 it should be able to shut down safely and let the `VBoxHeadless` process to
-exit and let the container stop normally.
+exit and let the container to stop normally.
+
+The `INT` and `QUIT` signals are also handled and translated respectively
+into the `savestate` and `poweroff` signals for the guest machine.
+If the container does not respond properly to the `TERM` signal,
+it can be forced to stop harder
+
+```shell
+sudo docker compose kill -s SIGQUIT
+```
+
+Also, setting [`stop_signal:`](https://docs.docker.com/compose/compose-file/#stop_signal)
+in [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
+to `SIGINT` or `SIGQUIT` respectively sets the default stop action for the guest machine
+to `savestate` or `poweroff` when the container stops.
 
 <a name="docker-service-overriding"></a>
 Note, `docker.service` at the docker host requires
 [overriding](https://wiki.archlinux.org/title/systemd#Drop-in_files) of the
 [`TimeoutStopSec=`](https://www.freedesktop.org/software/systemd/man/systemd.service.html#TimeoutStopSec=)
 value.
+Otherwise, while stopping the `docker.service`, `systemd` will kill the docker daemon
+and all running VirtualBox machines after the default 90 seconds
+which could be not sufficient for some guest OS to stop properly.\
+Here is an example drop-in
+[file](https://github.com/o124/archlinux-virtualbox-host/blob/main/etc/systemd/system/docker.service.d/TimeoutStopSec.conf):
 
    ```unit file (systemd)
    # /etc/systemd/system/docker.service.d/TimeoutStopSec.conf
@@ -473,9 +562,6 @@ value.
    TimeoutStopSec=5h
    ```
 
-Otherwise, while stopping the `docker.service`,
-`systemd` will kill docker and guest OS after the default 90 seconds
-which could be not sufficient for some guest OS to stop properly.
 
 ---
 
@@ -493,9 +579,15 @@ The `entrypoint` script recognises the following _commands_
    *running*|*restoring*|*saving*|*paused*|*saved*.
    *Do not* start the guest machine.
 
-The _commands_ can be used in the
+The _commands_ can be used for examples in the
 [`command:`](https://docs.docker.com/compose/compose-file/#command)
-configuration entry in `compose.yaml`
+configuration entry in [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml) or with
+[`docker compose run`](https://docs.docker.com/engine/reference/commandline/compose_run/)
+command
+
+```shell
+sudo docker compose run -it --rm --name base vbox state
+```
 
 Unrecognised commands are executed with `exec "$@"`
 replacing thereby the `entrypoint` process.
@@ -519,7 +611,7 @@ file.
 **$VBGUEST** is a label used to construct the container name,
 and `$COMPOSE_PROJECT_NAME`.
 See how in [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
-and [`compose.yaml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml).
+and [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml).
 When starting multiple containers,
 make sure that they use different `$VBGUEST` strings for them to get unique names.
 
@@ -532,9 +624,6 @@ is included in the folder names for the named volumes.
 **$VMSRC** is mounted into [`$VMDIR`](#VMDIR) inside the container when it starts.
 It should contain a complete VirtualBox machine to run, i.e.
 a `*.vbox` file defining the machine and everything it refers to.
-It is what `--basefolder` parameter of
-[`vboxmanage createvm`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
-command expects.
 `$VMSRC` should have permissions allowing user
 [`$VBUSR`](#VBUSR) with id [`$VBUID`](#VBUID)
 inside the container to read and modify it.
@@ -548,6 +637,9 @@ to set the appropriate permissions on `$VMSRC` before starting the container.
 <a name="VMDIR"></a>
 **$VMDIR** is a directory inside the container
 where [`$VMSRC`](#VMSRC) is to be mounted.
+It is what `--basefolder` parameter of
+[`vboxmanage createvm`](https://www.virtualbox.org/manual/ch08.html#vboxmanage-createvm)
+command expects.
 See also [here](#if-no-registered-machine-found).
 
 <a name="VBUSR"></a>
