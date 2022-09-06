@@ -245,10 +245,10 @@ A container should start up and show bash prompt ready for input.
   Use `$VMDIR` for `--basefolder` parameter with the `createvm` command.
 
 
-- Alternatively, an example script
+- As an alternative, an example script
   [`vm-create`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/vm-create)
-  to create Arch Linux guest is included here.\
-  To use it as it is simply run it in the container
+  is included here. By default, it creates Arch Linux guest machine.\
+  Simply run it in the container:
 
   ```shell
   ./vm-create
