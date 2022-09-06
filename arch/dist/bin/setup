@@ -4,7 +4,7 @@
 # Set `/etc/localtime`
 # Install Oracle_VM_VirtualBox_Extension_Pack
 # Prepare $HOME for $VBUSR
-# Move /usr/local/bin/vm*create* into /home/$VBUSR/
+# Move /usr/local/bin/vm-create* into /home/$VBUSR/
 # Prepare $VMDIR
 
 set -eE
@@ -78,7 +78,7 @@ mv_vm_create()
         if ! mv -ut "/home/$VBUSR" "$FILE"
         then echo "Error: while moving '$FILE'. EC=$?"
         fi
-    done < <( find "/usr/local/bin" -type f -iname "vm*create*" | sort )
+    done < <( find "/usr/local/bin" -type f -iname "vm-create*" | sort )
 
     chmod -cR u=rwX,go= "/home/$VBUSR"
     chown -cR "$VBUSR":"$VBUSR" "/home/$VBUSR"

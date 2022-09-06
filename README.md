@@ -126,10 +126,10 @@ running under Arch Linux is implied here, it can be remote and headless.
 - <a name="make-VMSRC-accessible"></a>
   Provide a read/write access to [`$VMSRC`](#VMSRC) for [`$VBUID`](#VBUID).
   For that, the included helper script
-  [`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc),
+  [`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc)
   making use of the
   [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
-  file, can be used at the Docker host:
+  file can be used at the Docker host:
 
    ```shell
    sudo ./set-perm-vmsrc
@@ -246,12 +246,12 @@ A container should start up and show bash prompt ready for input.
 
 
 - Alternatively, an example script
-  [`vm_create`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/vm_create)
+  [`vm-create`](https://github.com/o124/archlinux-virtualbox-host/blob/main/arch/dist/bin/vm-create)
   to create Arch Linux guest is included here.\
   To use it as it is simply run it in the container
 
   ```shell
-  ./vm_create
+  ./vm-create
   ```
 
   The script supports a number of variables (described inside the script) to control
@@ -261,7 +261,7 @@ A container should start up and show bash prompt ready for input.
   VM_NAME="s-proxy" \
   VM_OSTYPE="Ubuntu_64" \
   OS_ISO_URL="https://releases.ubuntu.com/22.04.1/ubuntu-22.04.1-live-server-amd64.iso" \
-  ./vm_create
+  ./vm-create
   ```
 
   The script can also be modified directly at the Docker host machine
@@ -278,7 +278,7 @@ A container should start up and show bash prompt ready for input.
   /var/lib/docker/volumes/vbox-base_vbusr/_data
   ```
 
-  There the `./vm_create` file can be modified with any text editor available at the Docker host.
+  There, the `./vm-create` file can be modified with any text editor available at the Docker host.
 
 When the machine is created and modified as intended, exit from the bash session.
 
