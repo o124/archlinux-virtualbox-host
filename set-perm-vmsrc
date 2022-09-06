@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # set-perm-vmsrc
 
-# Use .env to get VMSRC and VBUID values
+# Use .env to get VBGUEST, VMSRC, and VBUID values
+# VBGUEST is required to calculate the default VMSRC value
 # Set rwXrX permissions on $VMSRC for $VBUID
+
 
 while read -r pair
 do eval "$pair"
+# inline comments in .env are not supported
 done < <( grep -sP '^\s*VBGUEST=|^\s*VMSRC=|^\s*VBUID=' "${0%/*}/.env" )
 unset pair
 
