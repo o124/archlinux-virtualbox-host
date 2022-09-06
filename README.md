@@ -297,9 +297,7 @@ file, re-enable the
 ## Accessing the guest OS with an RDP client
 
 **At the Docker host**
-<span style="font-size: 0.95em">
-(before starting the guest machine)
-</span>.
+<span style="font-size: 0.95em">(before starting the guest machine)</span>.
 
 
 - To activate the VirtualBox *VRDP* server and allow incoming *RDP* connections
