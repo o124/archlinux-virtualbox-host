@@ -6,8 +6,7 @@
 
 while read -r pair
 do eval "$pair"
-# inline comments in .env are not supported
-done < <( grep -sP '^\s*VMSRC=|^\s*VBUID=' "${0%/*}/.env" )
+done < <( grep -sP '^\s*VBGUEST=|^\s*VMSRC=|^\s*VBUID=' "${0%/*}/.env" )
 unset pair
 
 # test -n "$VMSRC" && test -n "$VBUID"
