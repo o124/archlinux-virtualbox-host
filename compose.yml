@@ -34,8 +34,8 @@ volumes:
 
 networks:
   f-net:
-  # The following lines are optional and
-  # the explicit CIDR/IP must be unique for every container.
+  # The following lines are optional
+  # Note, the explicit CIDR/IP must be unique for every container
     #ipam:
       #config:
         #- subnet: 172.30.30.0/30
