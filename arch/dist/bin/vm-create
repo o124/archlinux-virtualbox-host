@@ -10,7 +10,10 @@
 VM_NAME="${VM_NAME:-arch}"
 
 # The available OSTYPEs can be listed with `VBoxManage list ostypes`
-# OSTYPE determines the default guest VM parameters
+# OSTYPE determines the default guest VM parameters, like
+# --memory
+# --vram
+# --cpus
 # Choosing the defaults, VirtualBox prefers safety over performance.
 VM_OSTYPE="${VM_OSTYPE:-ArchLinux_64}"
 
@@ -86,15 +89,15 @@ main()
     vboxmanage createvm "${CRE_OPTS[@]}"
 
     MOD_OPTS=(
-        --memory 1024
-        --vram 16
+        # --memory 1024
+        # --vram 16
         --acpi on
         --hwvirtex on
         --nestedpaging on
         --largepages on
         --vtxvpid on
         --pae on
-        --cpus 4
+        # --cpus 4
         --accelerate3d on
         --accelerate2dvideo on
         --biosbootmenu disabled
