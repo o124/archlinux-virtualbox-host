@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# dc
+
+# Help starting docker compose commands in the current directory.
+# The script can be started using its full path,
+# current directory will be changed to its location.
+
+# ENFORCE SUDO
+
+if [ "$(id -u)" != "0" ]
+then exec sudo "$0" "$@"
+fi
+
+# CD INTO THE THIS SCRIPT DIR
+
+D0="${0%/*}"
+WD="${D0:-.}"
+
+if ! cd "$WD"
+then echo "Could not 'cd $WD'"; exit 1
+fi
+
+# DO DOCKER COMPOSE
+
+exec docker compose "$@"
