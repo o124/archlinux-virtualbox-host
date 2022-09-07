@@ -22,8 +22,11 @@ RUN set -xe -o pipefail && \
     pacman -Scc --noconfirm && \
     rm -f /var/cache/pacman/pkg/* && \
     rm -f /usr/src/* && \
-    chmod -cR u=rwx,go=rx "/usr/local/bin" && \
-    VBUSR=$VBUSR TZONE=$TZONE /usr/local/bin/setup
+    chmod -cR u=rwx,go=rx "/usr/local/bin"
+
+RUN set -xe -o pipefail && \
+    VBUSR=$VBUSR TZONE=$TZONE /usr/local/bin/setup && \
+    rm /usr/local/bin/setup
 
 VOLUME ["$VMDIR", "/home/$VBUSR"]
 
