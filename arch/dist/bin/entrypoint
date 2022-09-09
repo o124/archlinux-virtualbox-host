@@ -115,14 +115,8 @@ vm_run()
     msg_ "Info" "Waiting for the background VBox processes to terminate..."
 
     pwait -u "$VBUID" -i 'VBoxSVC' &
-    # WAIT_VSVC_PID=$!
-    # wait $WAIT_VSVC_PID
-
     pwait -u "$VBUID" -i 'VBoxXPCOMIPCD' &
-    # WAIT_VXPCOMIPCD_PID=$!
-    # wait $WAIT_VXPCOMIPCD_PID
-
-    wait  # == 'for all children'
+    wait
 
     msg_ "Info" "All done"
 }
