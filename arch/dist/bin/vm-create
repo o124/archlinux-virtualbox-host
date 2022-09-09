@@ -54,19 +54,28 @@ OS_ISO_URL="${OS_ISO_URL-https://mirror.rackspace.com/archlinux/iso/latest/archl
 # Leave it empty to not use it.
 GA_ISO="${GA_ISO-/usr/lib/virtualbox/additions/VBoxGuestAdditions.iso}"
 
+# Just a label
+VMStorageCtlName="StorageController"
+
+# The type of the system bus to which the storage controller must be connected.
+# Default is "sata". As "virtio" is experimental, expect problems.
+VMStorageCtlBusType="sata"
+
+# Chipset type being emulated for the given storage controller.
+# Default chipset for "sata" controller is "IntelAhci".
+VMStorageCtlChipset="IntelAhci"
+
 # Also, modify  as needed the other key parameters in the following `vboxmanage modifyvm`, like
 # --memory (main RAM in MB)
 # --vram (video RAM in MB)
 # --cpus
 # --vrdeport
 
-
-# GLOBAL VARIABLES
+# INTERNAL GLOBAL VARIABLES
 
 PORT=0  # The next free StorageCtl port number
 
 set -eE
-
 
 main()
 {
@@ -98,8 +107,8 @@ main()
         --vtxvpid on
         --pae on
         # --cpus 4
-        --accelerate3d on
-        --accelerate2dvideo on
+        # --accelerate3d on
+        # --accelerate2dvideo on
         --biosbootmenu disabled
         --boot1 disk
         --boot2 dvd
@@ -107,21 +116,23 @@ main()
         --boot4 none
         --nic1 nat
         --nictype1 "$VM_NICTYPE"
-        --natpf1 "SSH,tcp,,22,,22"
-        --audio none
+        --natpf1 "SSHSRV,tcp,,22,,22"
+        --audio none # alsa
         --audioin off
         --audioout off
-        --clipboard-mode bidirectional
-        --draganddrop bidirectional
+        # --clipboard-mode bidirectional
+        # --draganddrop bidirectional
         --vrde on
-        --vrdeport 3389
-        --vrdeaddress "0.0.0.0"
-        --vrdevideochannel on
-        --vrdevideochannelquality 90
+        # --vrdeport 3389
+        # --vrdeaddress "0.0.0.0"
+        # --vrdevideochannel on
+        # --vrdevideochannelquality 90
         --vrdemulticon off
     )
 
     vboxmanage modifyvm "$VM_NAME" "${MOD_OPTS[@]}"
+
+    rm_storage_controllers
 
     add_storage_controller
 
@@ -140,9 +151,11 @@ main()
 }
 
 
-add_storage_controller()
+rm_storage_controllers()
 {
     # Remove the default storage controllers
+
+    local StorageCtlName
 
     while read StorageCtlName
     do
@@ -155,17 +168,18 @@ add_storage_controller()
         awk -F= '{print $2;}' | \
         sed -r -e 's|\"||g'
         )
+}
 
-    # Add VirtIO storage
 
+add_storage_controller()
+{
     STOR_OPTS=(
-        --name "VirtIO"
-        --add "virtio"
-        --controller "VirtIO"
-        --hostiocache on
+        --name "$VMStorageCtlName"
+        --add "$VMStorageCtlBusType"
+        --controller "$VMStorageCtlChipset"
+        --hostiocache off
         --bootable on
     )
-
     vboxmanage storagectl "$VM_NAME" "${STOR_OPTS[@]}"
 }
 
@@ -201,7 +215,7 @@ add_vdis()
 add_hdd()
 {
     DISK_OPTS=(
-        --storagectl "VirtIO"
+        --storagectl "$VMStorageCtlName"
         --port "$PORT"
         --type hdd
         --discard on
@@ -250,7 +264,7 @@ add_ga_iso()
 add_dvd()
 {
     DISK_OPTS=(
-        --storagectl "VirtIO"
+        --storagectl "$VMStorageCtlName"
         --port "$PORT"
         --type dvddrive
         --medium "$1"
