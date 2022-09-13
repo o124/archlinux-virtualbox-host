@@ -124,7 +124,7 @@ running under Arch Linux is implied here, it can be remote and headless.
 
 
 - <a name="make-VMSRC-accessible"></a>
-  Provide a read/write access to [`$VMSRC`](#VMSRC) for [`$VBUID`](#VBUID).
+  Provide read/write access to [`$VMSRC`](#VMSRC) for [`$VBUID`](#VBUID).
   For that, the included helper script
   [`set-perm-vmsrc`](https://github.com/o124/archlinux-virtualbox-host/blob/main/set-perm-vmsrc)
   making use of the
