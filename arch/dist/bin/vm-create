@@ -55,15 +55,15 @@ OS_ISO_URL="${OS_ISO_URL-https://mirror.rackspace.com/archlinux/iso/latest/archl
 GA_ISO="${GA_ISO-/usr/lib/virtualbox/additions/VBoxGuestAdditions.iso}"
 
 # Just a label
-VMStorageCtlName="StorageController"
+VM_STORAGE_CTL_NAME="StorageController"
 
 # The type of the system bus to which the storage controller must be connected.
 # Default is "sata". As "virtio" is experimental, expect problems.
-VMStorageCtlBusType="sata"
+VM_STORAGE_CTL_BUS_TYPE="sata"
 
 # Chipset type being emulated for the given storage controller.
 # Default chipset for "sata" controller is "IntelAhci".
-VMStorageCtlChipset="IntelAhci"
+VM_STORAGE_CTL_CHIPSET="IntelAhci"
 
 # Also, modify  as needed the other key parameters in the following `vboxmanage modifyvm`, like
 # --memory (main RAM in MB)
@@ -174,9 +174,9 @@ rm_storage_controllers()
 add_storage_controller()
 {
     STOR_OPTS=(
-        --name "$VMStorageCtlName"
-        --add "$VMStorageCtlBusType"
-        --controller "$VMStorageCtlChipset"
+        --name "$VM_STORAGE_CTL_NAME"
+        --add "$VM_STORAGE_CTL_BUS_TYPE"
+        --controller "$VM_STORAGE_CTL_CHIPSET"
         --hostiocache off
         --bootable on
     )
@@ -215,7 +215,7 @@ add_vdis()
 add_hdd()
 {
     DISK_OPTS=(
-        --storagectl "$VMStorageCtlName"
+        --storagectl "$VM_STORAGE_CTL_NAME"
         --port "$PORT"
         --type hdd
         --discard on
@@ -264,7 +264,7 @@ add_ga_iso()
 add_dvd()
 {
     DISK_OPTS=(
-        --storagectl "$VMStorageCtlName"
+        --storagectl "$VM_STORAGE_CTL_NAME"
         --port "$PORT"
         --type dvddrive
         --medium "$1"
