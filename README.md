@@ -93,7 +93,7 @@ running under Arch Linux is implied here, it can be remote and headless.
 - Modify values in the
   [`.env`](https://github.com/o124/archlinux-virtualbox-host/blob/main/.env)
   file if needed.
-  Note, modification of IMAGE_NAME, VMDIR, VBUSR, VBUID, and TZONE
+  Note, the modification of IMAGE_NAME, VMDIR, VBUSR, VBUID, and TZONE
   will require rebuilding of the docker image.
   Generally, the default values should be acceptable, at least for testing.
   An image built with the default values can be pulled from the dockerhub
@@ -218,11 +218,11 @@ is accessible to [`$VBUID`](#VBUID).
 
 <a name="interactive-bash-session"></a>
 
-To start an *interactive bash session* in the container instead of the guest machine,
+To start an *interactive bash session* in the container instead of starting the guest machine,
 temporarily disable
 [`healthcheck`](https://docs.docker.com/compose/compose-file/#healthcheck)
 in the [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
-file
+file if it is enabled
 
 ```yaml
   healthcheck:
@@ -258,7 +258,7 @@ A container should start up and show bash prompt ready for input.
   the guest machine configuration. For example, to create an ubuntu guest run:
 
   ```shell
-  VM_NAME="s-proxy" \
+  VM_NAME="u-box" \
   VM_OSTYPE="Ubuntu_64" \
   OS_ISO_URL="https://releases.ubuntu.com/22.04.1/ubuntu-22.04.1-live-server-amd64.iso" \
   ./vm-create
@@ -285,6 +285,7 @@ When the machine is created and modified as intended, exit from the bash session
 Finally, in the [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
 file, re-enable the
 [`healthcheck`](https://docs.docker.com/compose/compose-file/#healthcheck)
+if needed:
 
 ```yaml
   healthcheck:
@@ -383,7 +384,7 @@ file, re-enable the
 
 ## Next steps
 
-- After initial tests confirm expected container behaiviuor,
+- After initial tests confirm the expected container behavior,
   the `restart:` configuration entry in
   [`compose.yml`](https://github.com/o124/archlinux-virtualbox-host/blob/main/compose.yml)
   can be changed to `unless-stopped`:
