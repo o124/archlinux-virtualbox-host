@@ -10,8 +10,6 @@ ARG TZONE
 ENV VMDIR=$VMDIR
 ENV VBUID=$VBUID
 
-COPY "dist/bin/"  "/usr/local/bin/"
-
 RUN set -xe -o pipefail && \
     pacman -Sy --noconfirm --needed && \
     pacman -S  --noconfirm --needed \
@@ -21,10 +19,12 @@ RUN set -xe -o pipefail && \
         && \
     pacman -Scc --noconfirm && \
     rm -f /var/cache/pacman/pkg/* && \
-    rm -f /usr/src/* && \
-    chmod -cR u=rwx,go=rx "/usr/local/bin"
+    rm -f /usr/src/*
+
+COPY "dist/bin/"  "/usr/local/bin/"
 
 RUN set -xe -o pipefail && \
+    chmod -cR u=rwx,go=rx "/usr/local/bin" && \
     VBUSR=$VBUSR TZONE=$TZONE /usr/local/bin/setup && \
     rm /usr/local/bin/setup
 
@@ -35,7 +35,7 @@ WORKDIR "/home/$VBUSR"
 USER $VBUSR:$VBUSR
 
 HEALTHCHECK \
-   --interval=30s \
+   --interval=60s \
    --timeout=15s \
    --start-period=30s \
    CMD ["/usr/local/bin/entrypoint", "healthcheck"]
