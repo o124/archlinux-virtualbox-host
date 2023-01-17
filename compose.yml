@@ -13,7 +13,7 @@ services:
         - TZONE
     container_name: vbox-$VBGUEST
     healthcheck:
-      disable: false
+      disable: true
     restart: "no"
     #restart: unless-stopped
     stop_grace_period: $GRACE_PERIOD
@@ -25,6 +25,8 @@ services:
     volumes:
       - $VMSRC:$VMDIR
       - vbusr:/home/$VBUSR
+    working_dir: /home/$VBUSR
+    user: $VBUSR
     devices:
       - "/dev/vboxdrv:/dev/vboxdrv"
       - "/dev/vboxdrvu:/dev/vboxdrvu"
