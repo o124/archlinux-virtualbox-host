@@ -52,7 +52,7 @@ get_vm_name_and_id()
     # select from the output only the lines looking like VMs list.
     # Pick only the 1st VM found.
     local entry vmid_re
-    vmid_re='[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}'
+    vmid_re='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
     read -r entry < <(
         vboxmanage list vms 2>/dev/null |\
         grep -siPm 1 '".+"\s+{'"$vmid_re"'}'
