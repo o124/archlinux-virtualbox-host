@@ -108,14 +108,14 @@ vm_run()
 
     # Waiting for the VBoxHeadless itself is not redundant here
     msg_ "Info" "Waiting for VBoxHeadless to exit"
-    pwait -u "$VBUID" -i 'VBoxHeadless' &
+    pidwait -u "$VBUID" -i 'VBoxHeadless' &
     WAIT_VHL_PID=$!
     wait $WAIT_VHL_PID
 
     msg_ "Info" "Waiting for the background VBox processes to terminate..."
 
-    pwait -u "$VBUID" -i 'VBoxSVC' &
-    pwait -u "$VBUID" -i 'VBoxXPCOMIPCD' &
+    pidwait -u "$VBUID" -i 'VBoxSVC' &
+    pidwait -u "$VBUID" -i 'VBoxXPCOMIPCD' &
     wait
 
     msg_ "Info" "All done"
