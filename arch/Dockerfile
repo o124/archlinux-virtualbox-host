@@ -12,14 +12,13 @@ ENV VBUID=$VBUID
 
 RUN set -xe -o pipefail && \
     pacman -Sy --noconfirm --needed && \
-    pacman -S  --noconfirm --needed \
-        virtualbox-host-modules-arch \
+    pacman -Su  --noconfirm --needed \
         virtualbox-guest-iso \
         virtualbox \
         && \
     pacman -Scc --noconfirm && \
     rm -f /var/cache/pacman/pkg/* && \
-    rm -f /usr/src/*
+    find /usr/src -mindepth 1 -delete
 
 COPY "dist/bin/"  "/usr/local/bin/"
 
