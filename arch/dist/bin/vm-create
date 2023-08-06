@@ -18,9 +18,15 @@ VM_NAME="${VM_NAME:-arch}"
 VM_OSTYPE="${VM_OSTYPE:-ArchLinux_64}"
 
 # Select a VM_NICTYPE, depending on the guest machine.
+# Am79C970A | Am79C973 | 82540EM | 82543GC | 82545EM | virtio
+# Am79C970A: AMD PCNet PCI II
+# Am79C973: AMD PCNet FAST III, which is the default value
+# 82540EM: Intel PRO/1000 MT Desktop
+# 82543GC: Intel PRO/1000 T Server
+# 82545EM: Intel PRO/1000 MT Server
 # Out-of-box OS support is available for
 # "virtio" - in most Linux>2.6
-# "82540EM" - in most OSes
+# "82540EM" - in most OSes including Windows Vista and later
 # "82543GC" - in Windows XP
 VM_NICTYPE="${VM_NICTYPE:-virtio}"
 
@@ -65,11 +71,17 @@ VM_STORAGE_CTL_BUS_TYPE="sata"
 # Default chipset for "sata" controller is "IntelAhci".
 VM_STORAGE_CTL_CHIPSET="IntelAhci"
 
+VRDEPORT="${VRDEPORT:-3389}"
+
 # Also, modify  as needed the other key parameters in the following `vboxmanage modifyvm`, like
 # --memory (main RAM in MB)
 # --vram (video RAM in MB)
 # --cpus
-# --vrdeport
+# --vrde-port
+
+# Usage examples:
+#   ./vm-create
+#   VM_NAME="w10" VM_OSTYPE="Windows10_64" VM_NICTYPE="82540EM" ./vm-create
 
 # INTERNAL GLOBAL VARIABLES
 
@@ -102,32 +114,35 @@ main()
         # --vram 16
         --acpi on
         --hwvirtex on
-        --nestedpaging on
-        --largepages on
-        --vtxvpid on
+        --nested-paging on
+        --large-pages on
+        --vtx-vpid on
         --pae on
         # --cpus 4
-        # --accelerate3d on
-        # --accelerate2dvideo on
-        --biosbootmenu disabled
+        # --accelerate-3d on
+        # --accelerate-2d-video on
+        --bios-boot-menu disabled
         --boot1 disk
         --boot2 dvd
         --boot3 none
         --boot4 none
         --nic1 nat
-        --nictype1 "$VM_NICTYPE"
+        --nic-type1 "$VM_NICTYPE"
         --natpf1 "SSHSRV,tcp,,22,,22"
-        --audio none # alsa
-        --audioin off
-        --audioout off
+
+        # --audio-controller hda # ac97|hda
+        # --audio-codec stac9700|ad1980|stac9221
+        # --audio-driver default # none|alsa|default|null|was|oss|alsa|pulse
+        # --audio-in off
+        # --audio-out off
         # --clipboard-mode bidirectional
         # --draganddrop bidirectional
         --vrde on
-        # --vrdeport 3389
-        # --vrdeaddress "0.0.0.0"
-        # --vrdevideochannel on
-        # --vrdevideochannelquality 90
-        --vrdemulticon off
+        # --vrde-port "$VRDEPORT"
+        # --vrde-address "0.0.0.0"
+        # --vrde-video-channel on
+        # --vrde-video-channel-quality 90
+        --vrde-multi-con off
     )
 
     vboxmanage modifyvm "$VM_NAME" "${MOD_OPTS[@]}"
